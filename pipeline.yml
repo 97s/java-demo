@@ -1,0 +1,29 @@
+version: 1.1
+stages:
+  - stage:
+      - git-checkout:
+
+  - stage:
+      - java:
+          alias: java-demo
+          params:
+            build_type: maven
+            #打包时的工作目录，此路径一般为根 pom.xml 的路径。
+            # ${git-checkout} 表示引用上一个 stage 流程里的输出结果，如有别名则使用别名表示
+            workdir: ${git-checkout}
+            # 打包产物，一般为 jar，填写相较于 workdir 的相对路径。文件必须存在，否则将会出错。
+            target: ./target/docker-java-app-example.jar
+            # 运行 target（如 jar）所需的容器类型，比如这里我们打包的结果是 spring-boot 的 fat jar，故使用 spring-boot container
+            container_type: spring-boot
+
+  - stage:
+      - release:
+          params:
+            dice_yml: ${git-checkout}/dice.yml
+            image:
+              java-demo: ${java-demo:OUTPUT:image}
+
+  - stage:
+      - dice:
+          params:
+            release_id: ${release:OUTPUT:releaseID}
